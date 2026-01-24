@@ -1,4 +1,4 @@
-﻿// ao_frameguide.cpp
+// ao_frameguide.cpp
 // Maya2025 VP2 - "Cause-Finding" Debug Overlay for Resolution Gate
 //
 // What it draws:
@@ -36,7 +36,7 @@
 #include <maya/MFnCamera.h>
 
 // VP2 / RenderOverride
-#include <maya/MHWRender.h>
+#include <maya/MRenderer.h>
 #include <maya/MRenderOverride.h>
 #include <maya/MRenderOperation.h>
 #include <maya/MUserRenderOperation.h>
