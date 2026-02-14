@@ -1,0 +1,19 @@
+{
+  "configurations": [
+    {
+      "name": "Win64",
+      "intelliSenseMode": "windows-msvc-x64",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/Program Files/Autodesk/Maya2025/include",
+        "E:/mayadev/devkitBase/include"
+      ],
+      "defines": [
+        "NT_PLUGIN",
+        "REQUIRE_IOSTREAM"
+      ],
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}
