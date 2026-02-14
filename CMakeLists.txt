@@ -1,51 +1,65 @@
 cmake_minimum_required(VERSION 3.20)
-project(ao_viewport_guide LANGUAGES CXX)
 
-set(MAYA_LOCATION "" CACHE PATH "Maya install path (e.g. C:/Program Files/Autodesk/Maya2025)")
-set(DEVKIT_BASE  "" CACHE PATH "Optional: DevKit base path (e.g. E:/mayadev/devkitBase)")
+project(ao_viewport_guide VERSION 0.1.0 LANGUAGES CXX)
+
+# ---- User settings ----
+set(MAYA_LOCATION "" CACHE PATH "Path to Autodesk Maya (e.g. C:/Program Files/Autodesk/Maya2025)")
+set(DEVKIT_BASE   "" CACHE PATH "Optional: Path to devkitBase (e.g. E:/mayadev/devkitBase)")
 
 if(NOT MAYA_LOCATION)
-  message(FATAL_ERROR "MAYA_LOCATION is not set. ex) -DMAYA_LOCATION=\"C:/Program Files/Autodesk/Maya2025\"")
+  message(FATAL_ERROR "Please set MAYA_LOCATION. Example: -DMAYA_LOCATION=\"C:/Program Files/Autodesk/Maya2025\"")
 endif()
 
-add_library(ao_viewport_guide SHARED
+set(MAYA_INCLUDE_DIR "${MAYA_LOCATION}/include")
+set(MAYA_LIB_DIR     "${MAYA_LOCATION}/lib")
+
+# ---- Target ----
+add_library(${PROJECT_NAME} SHARED
   src/aoViewportGuidePlugin.cpp
 )
 
-target_compile_features(ao_viewport_guide PRIVATE cxx_std_17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
-if(WIN32)
-  set_target_properties(ao_viewport_guide PROPERTIES SUFFIX ".mll")
-  target_compile_definitions(ao_viewport_guide PRIVATE
-    _CRT_SECURE_NO_WARNINGS
-    NOMINMAX
-    WIN32
-    _WINDOWS
-    NT_PLUGIN
-  )
-endif()
-
-# include dirs (Maya + optional DevKit)
-target_include_directories(ao_viewport_guide PRIVATE
-  "${MAYA_LOCATION}/include"
+# Maya headers
+target_include_directories(${PROJECT_NAME} PRIVATE
+  "${MAYA_INCLUDE_DIR}"
 )
 
-if(DEVKIT_BASE)
-  target_include_directories(ao_viewport_guide PRIVATE
+# Optional devkitBase headers (if you have extra headers there)
+if(DEVKIT_BASE AND EXISTS "${DEVKIT_BASE}/include")
+  target_include_directories(${PROJECT_NAME} PRIVATE
     "${DEVKIT_BASE}/include"
-    "${DEVKIT_BASE}/devkit/include"
   )
 endif()
 
-target_link_directories(ao_viewport_guide PRIVATE
-  "${MAYA_LOCATION}/lib"
+# Link Maya libs
+target_link_directories(${PROJECT_NAME} PRIVATE
+  "${MAYA_LIB_DIR}"
 )
 
-target_link_libraries(ao_viewport_guide PRIVATE
-  OpenMaya
-  OpenMayaRender
+# Typical libs for VP2 override + node
+target_link_libraries(${PROJECT_NAME} PRIVATE
   Foundation
+  OpenMaya
+  OpenMayaUI
+  OpenMayaRender
 )
 
-# もし unresolved externals が出たら追加：
-# target_link_libraries(ao_viewport_guide PRIVATE OpenMayaUI)
+# Windows plugin settings
+if(WIN32)
+  # Maya plugin extension
+  set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".mll")
+
+  # Common defines for Maya plugins on Windows
+  target_compile_definitions(${PROJECT_NAME} PRIVATE
+    NT_PLUGIN
+    REQUIRE_IOSTREAM
+  )
+
+  # (optional) put the built .mll in build/bin
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  )
+endif()
