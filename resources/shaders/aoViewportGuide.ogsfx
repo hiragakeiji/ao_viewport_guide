@@ -1,0 +1,14 @@
+// aoViewportGuide.ogsfx
+// v0.2.3
+//
+// NOTE:
+//   This file is reserved for a future "full screen quad + shader" approach.
+//   Current v0.2.3 draws via MUIDrawManager inside MUserRenderOperation.
+
+technique Default
+{
+    pass P0
+    {
+        // Intentionally empty for now.
+    }
+}

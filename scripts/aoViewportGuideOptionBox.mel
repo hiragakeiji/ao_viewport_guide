@@ -1,0 +1,118 @@
+// aoViewportGuideOptionBox.mel
+// AO Viewport Guide - Option Box
+// Version: v0.2.3
+//
+// Fix:
+//  - attrFieldSliderGrp に -field フラグは存在しないので使用しない
+//
+// Usage:
+//  - Script Editor (MEL) で: aoViewportGuideOptionBox;
+
+global proc string aoViewportGuide_findOrCreateOptionNode()
+{
+    string $type = "aoViewportGuideOption";
+    string $nodes[] = `ls -type $type`;
+    if (size($nodes) > 0)
+        return $nodes[0];
+
+    string $created = "";
+    int $err = `catchQuiet( $created = `createNode $type` )`;
+    if ($err || $created == "")
+    {
+        warning("[aoViewportGuideOptionBox] Cannot create node type: " + $type + ". Plugin is not loaded?");
+        return "";
+    }
+    return $created;
+}
+
+global proc aoViewportGuideOptionBox()
+{
+    string $win = "aoViewportGuideOptionBoxWin";
+    if (`window -exists $win`)
+        deleteUI $win;
+
+    string $node = aoViewportGuide_findOrCreateOptionNode();
+    if ($node == "")
+        return;
+
+    window -title "AO Viewport Guide Options (v0.2.3)" -sizeable true -widthHeight 360 520 $win;
+    columnLayout -adj true -rowSpacing 6;
+
+        text -align "left" -label ("Target node: " + $node);
+
+        // -------------------------
+        // Main
+        // -------------------------
+        frameLayout -label "Main" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
+        columnLayout -adj true -rowSpacing 4;
+
+            if (`attributeExists "enable" $node`)
+                attrControlGrp -label "Enable" -attribute ($node + ".enable");
+
+            if (`attributeExists "followResolutionGate" $node`)
+                attrControlGrp -label "Follow Resolution Gate" -attribute ($node + ".followResolutionGate");
+
+        setParent ..;
+        setParent ..;
+
+        // -------------------------
+        // Gate Border
+        // -------------------------
+        frameLayout -label "Gate Border" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
+        columnLayout -adj true -rowSpacing 4;
+
+            if (`attributeExists "gateBorderEnable" $node`)
+                attrControlGrp -label "Enable Border" -attribute ($node + ".gateBorderEnable");
+
+            if (`attributeExists "gateBorderOpacity" $node`)
+                attrFieldSliderGrp
+                    -label "Opacity"
+                    -min 0.0 -max 1.0
+                    -attribute ($node + ".gateBorderOpacity");
+
+            if (`attributeExists "gateBorderThickness" $node`)
+                attrFieldSliderGrp
+                    -label "Thickness"
+                    -min 0.5 -max 10.0
+                    -attribute ($node + ".gateBorderThickness");
+
+            if (`attributeExists "gateBorderColor" $node`)
+                attrColorSliderGrp
+                    -label "Color"
+                    -attribute ($node + ".gateBorderColor");
+
+        setParent ..;
+        setParent ..;
+
+        // -------------------------
+        // Guide Lines
+        // -------------------------
+        frameLayout -label "Guide Lines" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
+        columnLayout -adj true -rowSpacing 4;
+
+            if (`attributeExists "lineOpacity" $node`)
+                attrFieldSliderGrp
+                    -label "Opacity"
+                    -min 0.0 -max 1.0
+                    -attribute ($node + ".lineOpacity");
+
+            if (`attributeExists "lineThickness" $node`)
+                attrFieldSliderGrp
+                    -label "Thickness"
+                    -min 0.5 -max 10.0
+                    -attribute ($node + ".lineThickness");
+
+            if (`attributeExists "lineColor" $node`)
+                attrColorSliderGrp
+                    -label "Color"
+                    -attribute ($node + ".lineColor");
+
+        setParent ..;
+        setParent ..;
+
+        separator -height 8 -style "in";
+        button -label "Select Option Node" -command ("select -r " + $node + ";");
+        button -label "Close" -command ("deleteUI " + $win + ";");
+
+    showWindow $win;
+}
