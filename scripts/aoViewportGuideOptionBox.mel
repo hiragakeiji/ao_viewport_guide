@@ -1,16 +1,14 @@
 // aoViewportGuideOptionBox.mel
-// AO Viewport Guide - Option Box
-// Version: v0.2.3
+// Version: v0.3.0
 //
-// Fix:
-//  - attrFieldSliderGrp に -field フラグは存在しないので使用しない
-//
-// Usage:
-//  - Script Editor (MEL) で: aoViewportGuideOptionBox;
+// NOTE:
+// - This is called automatically when option box button is clicked,
+//   if the override internal name is "aoViewportGuide".
+// - You can also run manually: aoViewportGuideOptionBox;
 
-global proc string aoViewportGuide_findOrCreateOptionNode()
+global proc string aoViewportGuide_findOrCreateSettingsNode()
 {
-    string $type = "aoViewportGuideOption";
+    string $type = "aoViewportGuideSettings";
     string $nodes[] = `ls -type $type`;
     if (size($nodes) > 0)
         return $nodes[0];
@@ -31,23 +29,23 @@ global proc aoViewportGuideOptionBox()
     if (`window -exists $win`)
         deleteUI $win;
 
-    string $node = aoViewportGuide_findOrCreateOptionNode();
+    string $node = aoViewportGuide_findOrCreateSettingsNode();
     if ($node == "")
         return;
 
-    window -title "AO Viewport Guide Options (v0.2.3)" -sizeable true -widthHeight 360 520 $win;
+    window -title "AO Viewport Guide Options (v0.3.0)" -sizeable true -widthHeight 360 420 $win;
     columnLayout -adj true -rowSpacing 6;
 
-        text -align "left" -label ("Target node: " + $node);
+        text -align "left" -label ("Settings Node: " + $node);
 
-        // -------------------------
-        // Main
-        // -------------------------
         frameLayout -label "Main" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
         columnLayout -adj true -rowSpacing 4;
 
             if (`attributeExists "enable" $node`)
                 attrControlGrp -label "Enable" -attribute ($node + ".enable");
+
+            if (`attributeExists "guideType" $node`)
+                attrEnumOptionMenuGrp -label "Guide Type" -attribute ($node + ".guideType");
 
             if (`attributeExists "followResolutionGate" $node`)
                 attrControlGrp -label "Follow Resolution Gate" -attribute ($node + ".followResolutionGate");
@@ -55,64 +53,44 @@ global proc aoViewportGuideOptionBox()
         setParent ..;
         setParent ..;
 
-        // -------------------------
-        // Gate Border
-        // -------------------------
-        frameLayout -label "Gate Border" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
+        frameLayout -label "Guide Lines" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
+        columnLayout -adj true -rowSpacing 4;
+
+            if (`attributeExists "lineOpacity" $node`)
+                attrFieldSliderGrp -label "Opacity" -min 0.0 -max 1.0 -attribute ($node + ".lineOpacity");
+
+            if (`attributeExists "lineThickness" $node`)
+                attrFieldSliderGrp -label "Thickness" -min 0.5 -max 10.0 -attribute ($node + ".lineThickness");
+
+            if (`attributeExists "lineColor" $node`)
+                attrColorSliderGrp -label "Color" -attribute ($node + ".lineColor");
+
+        setParent ..;
+        setParent ..;
+
+        frameLayout -label "Resolution Gate Border" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
         columnLayout -adj true -rowSpacing 4;
 
             if (`attributeExists "gateBorderEnable" $node`)
                 attrControlGrp -label "Enable Border" -attribute ($node + ".gateBorderEnable");
 
             if (`attributeExists "gateBorderOpacity" $node`)
-                attrFieldSliderGrp
-                    -label "Opacity"
-                    -min 0.0 -max 1.0
-                    -attribute ($node + ".gateBorderOpacity");
+                attrFieldSliderGrp -label "Opacity" -min 0.0 -max 1.0 -attribute ($node + ".gateBorderOpacity");
 
             if (`attributeExists "gateBorderThickness" $node`)
-                attrFieldSliderGrp
-                    -label "Thickness"
-                    -min 0.5 -max 10.0
-                    -attribute ($node + ".gateBorderThickness");
+                attrFieldSliderGrp -label "Thickness" -min 0.5 -max 10.0 -attribute ($node + ".gateBorderThickness");
 
             if (`attributeExists "gateBorderColor" $node`)
-                attrColorSliderGrp
-                    -label "Color"
-                    -attribute ($node + ".gateBorderColor");
-
-        setParent ..;
-        setParent ..;
-
-        // -------------------------
-        // Guide Lines
-        // -------------------------
-        frameLayout -label "Guide Lines" -collapsable true -collapse false -marginWidth 8 -marginHeight 6;
-        columnLayout -adj true -rowSpacing 4;
-
-            if (`attributeExists "lineOpacity" $node`)
-                attrFieldSliderGrp
-                    -label "Opacity"
-                    -min 0.0 -max 1.0
-                    -attribute ($node + ".lineOpacity");
-
-            if (`attributeExists "lineThickness" $node`)
-                attrFieldSliderGrp
-                    -label "Thickness"
-                    -min 0.5 -max 10.0
-                    -attribute ($node + ".lineThickness");
-
-            if (`attributeExists "lineColor" $node`)
-                attrColorSliderGrp
-                    -label "Color"
-                    -attribute ($node + ".lineColor");
+                attrColorSliderGrp -label "Color" -attribute ($node + ".gateBorderColor");
 
         setParent ..;
         setParent ..;
 
         separator -height 8 -style "in";
-        button -label "Select Option Node" -command ("select -r " + $node + ";");
-        button -label "Close" -command ("deleteUI " + $win + ";");
+        rowLayout -numberOfColumns 2 -adjustableColumn 1 -columnWidth2 260 90;
+            button -label "Select Node" -command ("select -r " + $node + ";");
+            button -label "Close"       -command ("deleteUI " + $win + ";");
+        setParent ..;
 
     showWindow $win;
 }

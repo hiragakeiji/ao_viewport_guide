@@ -1,72 +1,54 @@
-// aoViewportGuidePlugin.cpp
-// AO Viewport Guide v0.2.3
-//
-// IMPORTANT:
-// - This is the ONLY .cpp that includes <maya/MFnPlugin.h>
-//   to avoid LNK2005 duplicates (DllMain / MApiVersion / ADSK_PLUGIN_SIGNATURE)
+// aoViewportGuidePlugin.cpp (v0.3.1)
+// Plugin entry points only.
 
-#include <maya/MFnPlugin.h>
-#include <maya/MGlobal.h>
-#include <maya/MStatus.h>
-#include <maya/MString.h>
-
-#include <maya/MViewport2Renderer.h> // for MHWRender::MRenderer etc
-
+#include "aoViewportGuideCommon.h"
 #include "aoViewportGuideOverride.h"
 #include "aoViewportGuideSettings.h"
 
+#include <maya/MFnPlugin.h>
+#include <maya/MGlobal.h>
+#include <maya/MPxNode.h>
+#include <maya/MViewport2Renderer.h>
+
 namespace
 {
-MHWRender::MRenderOverride* gOverride = nullptr;
+    static MHWRender::MRenderOverride* gOverride = nullptr;
 }
 
 MStatus initializePlugin(MObject obj)
 {
     MStatus stat;
-    MFnPlugin plugin(obj, "ao", "0.2.3", "Any", &stat);
+    MFnPlugin plugin(obj, "ao", AoViewportGuide::kVersion, "Any", &stat);
     if (!stat) return stat;
 
-    // register settings node
     stat = plugin.registerNode(
-        AoViewportGuideSettingsConst::kNodeTypeName,
-        gAoViewportGuideSettingsTypeId,
-        AoViewportGuideSettingsNode::creator,
-        AoViewportGuideSettingsNode::initialize,
+        AoViewportGuide::kSettingsNodeTypeName,
+        AoViewportGuide::AoViewportGuideSettingsNode::id,
+        AoViewportGuide::SettingsNodeCreator,
+        AoViewportGuide::SettingsNodeInitialize,
         MPxNode::kDependNode
     );
-    if (stat != MS::kSuccess)
-    {
-        MGlobal::displayError("[ao_viewport_guide] Failed to register settings node.");
-        return stat;
-    }
+    if (!stat) return stat;
 
-    // ensure node exists
-    (void)AoViewportGuideSettings::ensure();
+    AoViewportGuide::AoViewportGuideSettings::ensureNodeExists();
 
-    // register render override (Renderer menu)
     MHWRender::MRenderer* r = MHWRender::MRenderer::theRenderer();
-    if (!r)
-    {
-        MGlobal::displayError("[ao_viewport_guide] MRenderer::theRenderer() failed.");
-        return MS::kFailure;
-    }
-
-    if (!gOverride)
+    if (r && !gOverride)
     {
         gOverride = AoViewportGuide::createOverride();
         r->registerOverride(gOverride);
     }
 
-    MGlobal::displayInfo("[ao_viewport_guide] Loaded v0.2.3 : AO Viewport Guide");
+    MGlobal::displayInfo(MString("[ao_viewport_guide] Loaded ") + AoViewportGuide::kVersion);
     return MS::kSuccess;
 }
 
 MStatus uninitializePlugin(MObject obj)
 {
     MStatus stat;
-    MFnPlugin plugin(obj);
+    MFnPlugin plugin(obj, "ao", AoViewportGuide::kVersion, "Any", &stat);
+    if (!stat) return stat;
 
-    // deregister override
     MHWRender::MRenderer* r = MHWRender::MRenderer::theRenderer();
     if (r && gOverride)
     {
@@ -74,12 +56,8 @@ MStatus uninitializePlugin(MObject obj)
         AoViewportGuide::destroyOverride(gOverride);
     }
 
-    // deregister node
-    stat = plugin.deregisterNode(gAoViewportGuideSettingsTypeId);
-    if (stat != MS::kSuccess)
-    {
-        MGlobal::displayError("[ao_viewport_guide] Failed to deregister settings node.");
-    }
+    stat = plugin.deregisterNode(AoViewportGuide::AoViewportGuideSettingsNode::id);
+    if (!stat) return stat;
 
     MGlobal::displayInfo("[ao_viewport_guide] Unloaded");
     return MS::kSuccess;
